@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR GameVault</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wr">
+  <div class="pg" style="text-align:center;padding-top:30px">
+    <h1>Scan untuk buka GameVault</h1>
+    <p class="mu">Buka kamera HP lalu arahkan ke kode di bawah. HP harus satu Wi-Fi dengan laptop ini.</p>
+    <div id="kotak" style="background:#fff;padding:16px;border-radius:24px;width:fit-content;margin:20px auto"></div>
+    <div class="fm" style="margin:0 auto">
+      <label>Alamat (bisa diubah)</label>
+      <input id="adr">
+      <div class="rw" id="pilih"></div>
+    </div>
+    <h2 class="sh">Hotspot (opsional)</h2>
+    <p class="mu">Kalau pakai hotspot, isi nama dan kata sandinya untuk membuat QR sambung Wi-Fi. Pindai ini dulu, lalu pindai QR di atas.</p>
+    <div class="fm" style="margin:0 auto">
+      <label>Nama Wi-Fi</label><input id="ssid">
+      <label>Kata sandi (kosongkan jika tanpa sandi)</label><input id="sandi">
+      <button class="bt" style="margin-top:14px" id="btnwifi">Buat QR Wi-Fi</button>
+    </div>
+    <div id="kotakwifi" style="background:#fff;padding:16px;border-radius:24px;width:fit-content;margin:20px auto;display:none"></div>
+  </div>
+</main>
+<script src="js/qrcode.js"></script>
+<script>
+const buat = (teks, el, ukuran) => { const q = qrcode(0, 'M'); q.addData(teks); q.make(); el.innerHTML = q.createImgTag(ukuran, 0); };
+const tampil = (url) => { document.getElementById('adr').value = url; buat(url, document.getElementById('kotak'), 7); };
+document.getElementById('adr').addEventListener('input', (e) => { if (e.target.value.trim()) tampil(e.target.value.trim()); });
+(typeof fetch === 'function' ? fetch('/api/alamat').then((r) => r.json()) : Promise.reject())
+  .then((l) => {
+    const utama = l.find((x) => /wi-?fi|wlan|wireless/i.test(x.nama)) || l[0];
+    if (!utama) throw 0;
+    tampil(utama.url);
+    document.getElementById('pilih').innerHTML = l.map((x) => '<button class="ch" data-u="' + x.url + '">' + x.url + '</button>').join('');
+  })
+  .catch(() => tampil(location.origin));
+document.getElementById('pilih').addEventListener('click', (e) => { if (e.target.dataset.u) tampil(e.target.dataset.u); });
+document.getElementById('btnwifi').addEventListener('click', () => {
+  const esc = (s) => s.replace(/([\\;,:"])/g, '\\$1');
+  const ssid = document.getElementById('ssid').value.trim(), sandi = document.getElementById('sandi').value;
+  if (!ssid) return;
+  const kotak = document.getElementById('kotakwifi');
+  kotak.style.display = 'block';
+  buat('WIFI:T:' + (sandi ? 'WPA' : 'nopass') + ';S:' + esc(ssid) + ';' + (sandi ? 'P:' + esc(sandi) + ';' : '') + ';', kotak, 6);
+});
+</script>
+</body>
+</html>
